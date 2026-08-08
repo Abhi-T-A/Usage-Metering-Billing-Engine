@@ -9,7 +9,7 @@ A reliable backend service for SaaS applications to meter usage (API calls & AI 
 
 ## 📖 Architecture & Design
 
-See full Phase 1 Design Document in [Docs/DESIGN.md](file:///d:/Usage-Metering-Billing-Engine/Docs/DESIGN.md) or [Design.md](file:///d:/Usage-Metering-Billing-Engine/Design.md).
+See full Phase 1 Design Document in [Docs/DESIGN.md](Docs/DESIGN.md).
 
 ---
 

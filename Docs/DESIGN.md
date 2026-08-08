@@ -1329,32 +1329,5 @@ PHASE 5 — SUBMISSION
 27. Demo rehearsal
 ```
 
----
 
-# ✅ Phase 1 — COMPLETE
 
-We now have a complete design covering:
-
-**Problem → Requirements → Architecture → Data Model → Database Constraints → API Contract → Authentication → Tenant Isolation → Metering → Quotas → Pricing → Stripe → Testing → Security → Non-goals → Acceptance Criteria → Development Plan.**
-
-The next step is **not more design**.
-
-## 🔥 Phase 2.1 — Create the actual project
-
-We'll now build:
-
-```text
-FastAPI
-   ↓
-Docker Compose
-   ↓
-PostgreSQL
-   ↓
-SQLAlchemy
-   ↓
-Alembic
-   ↓
-GET /health
-```
-
-and establish the first Git commit with the required repository hygiene. The capstone specifically asks for the public repository to exist from day one, with a README skeleton and `.gitignore` in the first commit.

@@ -1,0 +1,43 @@
+name: usage-metering-billing-engine
+version: 0.1.0
+track: backend
+description: Multi-tenant SaaS Usage Metering, Quota Enforcement & Stripe Billing Engine
+
+run: python -m uvicorn app.main:app --port 8000
+seed: python -m app.scripts.seed && python -m app.scripts.seed_tenant
+test: python -m pytest
+
+base_url: http://localhost:8000
+
+endpoints:
+  health:
+    method: GET
+    path: /health
+    auth: none
+  generate:
+    method: POST
+    path: /generate
+    auth: x-api-key
+    headers:
+      - Idempotency-Key
+  usage:
+    method: GET
+    path: /usage
+    auth: x-api-key
+  checkout:
+    method: POST
+    path: /billing/checkout
+    auth: x-api-key
+  stripe_webhook:
+    method: POST
+    path: /webhooks/stripe
+    auth: stripe-signature
+    headers:
+      - Stripe-Signature
+
+probes:
+  probe_1_idempotency: tests/test_metering.py::test_probe_1_idempotent_usage_recording
+  probe_2_quota_boundary: tests/test_quota.py::test_probe_2_quota_boundary_exact_limit_and_exceeded
+  probe_3_stripe_upgrade: tests/test_stripe_webhook.py::test_probe_3_checkout_session_completed_upgrades_tenant
+  probe_4_webhook_security: tests/test_stripe_webhook.py::test_probe_4_duplicate_webhook_processed_only_once
+  probe_5_pricing_math: tests/test_pricing.py::test_pricing_combined_calculation

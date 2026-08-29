@@ -1,10 +1,8 @@
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-from app.core.database import engine
 
-
-def test_database_connection():
-    with engine.connect() as connection:
-        result = connection.execute(text("SELECT 1"))
-
-        assert result.scalar() == 1
+def test_database_connection(db_session: Session):
+    """Verifies that the test database engine and session execute queries properly."""
+    result = db_session.execute(text("SELECT 1"))
+    assert result.scalar() == 1

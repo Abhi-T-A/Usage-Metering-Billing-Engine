@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.config import settings
 from app.core.database import Base
 
-from app.models import Plan, Tenant, Subscription, UsageEvent
+from app.models import Plan, Tenant, Subscription, UsageEvent, StripeWebhookEvent
 
 
 config = context.config

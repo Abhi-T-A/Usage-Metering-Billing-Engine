@@ -14,7 +14,7 @@ This capstone was built through an incremental, test-driven approach across 5 st
 
 ### Phase 1: Architectural Design & Domain Modelling
 - **Objective:** Establish data models, schema relationships, and API contracts.
-- **AI Contributions:** Generated the comprehensive initial design document in `Docs/DESIGN.md` defining models for `Plan`, `Tenant`, `Subscription`, and `UsageEvent`.
+- **AI Contributions:** Generated the comprehensive initial design document in `DESIGN.md` defining models for `Plan`, `Tenant`, `Subscription`, and `UsageEvent`.
 - **Human Decision:** Enforced the critical database-level constraint `UNIQUE(tenant_id, idempotency_key)` on `usage_events` rather than relying solely on in-memory application checks.
 
 ---
@@ -34,10 +34,11 @@ This capstone was built through an incremental, test-driven approach across 5 st
 ### Phase 3: Stripe Integration & Probes 3 & 4
 - **Objective:** Implement Stripe Checkout Sessions and signed webhook processing.
 - **AI Contributions:** Scaffolded `StripeService` for session creation in `mode="subscription"` and `WebhookService` for cryptographic signature verification.
-- **Human Decision / Correctness Rules:**
+- **Correctness Rules:**
   - Verified that calling `POST /billing/checkout` **does not** prematurely upgrade the tenant's plan.
   - Created persistent table `stripe_webhook_events` with unique index on `stripe_event_id` to guarantee replay attack and duplicate webhook protection across server restarts.
   - Configured raw byte reading (`await request.body()`) before JSON parsing to prevent signature mismatch failures.
+  - Added handlers for `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
 
 ---
 
@@ -53,8 +54,8 @@ This capstone was built through an incremental, test-driven approach across 5 st
 
 ### Phase 5: Background Reconciliation Job & Submission Pack
 - **Objective:** Background cron/job comparing local DB against Stripe API with failure isolation.
-- **AI Contributions:** Implemented `SubscriptionReconciler` in `app/scripts/reconciliation_job.py` and automated test mocking.
-- **Resilience Design:** Each subscription is checked in its own try/except block so that an API failure for one tenant never crashes the batch job.
+- **AI Contributions:** Implemented `SubscriptionReconciler` in `app/scripts/reconciliation_job.py` with exponential backoff retries and critical alert hooks.
+- **Resilience Design:** Each subscription is checked in its own try/except block with retry loops so that an API failure for one tenant never crashes the batch job.
 
 ---
 
@@ -63,12 +64,12 @@ This capstone was built through an incremental, test-driven approach across 5 st
 | Phase | Added Test Modules | Total Passing Tests |
 | :--- | :--- | :---: |
 | **Phase 2** | `test_auth.py`, `test_metering.py`, `test_quota.py` | 13 |
-| **Phase 3** | `test_billing_checkout.py`, `test_stripe_webhook.py` | 21 |
-| **Phase 4** | `test_pricing.py`, `test_usage_rollup.py` | 33 |
-| **Phase 5** | `test_reconciliation.py` | **37** |
+| **Phase 3** | `test_billing_checkout.py`, `test_stripe_webhook.py` | 23 |
+| **Phase 4** | `test_pricing.py`, `test_usage_rollup.py` | 35 |
+| **Phase 5** | `test_reconciliation.py` | **39** |
 
 ---
 
 ## 🛡️ Production Hygiene & Safety
 1. **Secrets:** All secrets (`DATABASE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) stay in `.env` (git-ignored) with safe placeholders in `.env.example`.
-2. **Deterministic Tests:** In-memory SQLite with `StaticPool` runs all 37 tests in under 3.5 seconds with zero external network dependencies.
+2. **Deterministic Tests:** In-memory SQLite with `StaticPool` runs all 39 tests in under 3.5 seconds with zero external network dependencies.

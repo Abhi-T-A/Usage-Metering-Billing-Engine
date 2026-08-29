@@ -85,6 +85,120 @@ def test_probe_3_checkout_session_completed_upgrades_tenant(
     assert sub.stripe_subscription_id == "sub_test_sub_789"
 
 
+def test_webhook_customer_subscription_updated(
+    client: TestClient,
+    db_session: Session,
+    test_tenant_data: dict,
+):
+    """Verifies that customer.subscription.updated synchronizes period timestamps and status."""
+    tenant = test_tenant_data["tenant"]
+
+    sub = Subscription(
+        tenant_id=tenant.id,
+        plan_id=tenant.plan_id,
+        status="active",
+        stripe_customer_id="cus_upd_123",
+        stripe_subscription_id="sub_upd_123",
+    )
+    db_session.add(sub)
+    db_session.commit()
+
+    event_payload = {
+        "id": "evt_sub_updated_001",
+        "type": "customer.subscription.updated",
+        "data": {
+            "object": {
+                "id": "sub_upd_123",
+                "customer": "cus_upd_123",
+                "status": "past_due",
+                "current_period_start": 1700000000,
+                "current_period_end": 1702592000,
+            }
+        },
+    }
+    raw_payload = json.dumps(event_payload).encode("utf-8")
+
+    with patch("stripe.Webhook.construct_event", return_value=event_payload):
+        resp = client.post(
+            "/webhooks/stripe",
+            content=raw_payload,
+            headers={"Stripe-Signature": "valid_sig"},
+        )
+        assert resp.status_code == 200
+
+    refreshed_sub = db_session.scalar(
+        select(Subscription).where(Subscription.id == sub.id)
+    )
+    assert refreshed_sub.status == "past_due"
+    assert refreshed_sub.current_period_start is not None
+    assert refreshed_sub.current_period_end is not None
+
+
+def test_webhook_customer_subscription_deleted_downgrades_tenant(
+    client: TestClient,
+    db_session: Session,
+    test_tenant_data: dict,
+):
+    """Verifies that customer.subscription.deleted marks subscription canceled and downgrades tenant to FREE."""
+    tenant = test_tenant_data["tenant"]
+    free_plan_id = tenant.plan_id
+
+    # Upgrade to PRO first
+    pro_plan = Plan(
+        name="PRO_DEL",
+        api_call_limit=10000,
+        ai_token_limit=1000000,
+        price_cents=2900,
+    )
+    db_session.add(pro_plan)
+    db_session.commit()
+    tenant.plan_id = pro_plan.id
+    db_session.add(tenant)
+
+    sub = Subscription(
+        tenant_id=tenant.id,
+        plan_id=pro_plan.id,
+        status="active",
+        stripe_customer_id="cus_del_123",
+        stripe_subscription_id="sub_del_123",
+    )
+    db_session.add(sub)
+    db_session.commit()
+
+    event_payload = {
+        "id": "evt_sub_deleted_001",
+        "type": "customer.subscription.deleted",
+        "data": {
+            "object": {
+                "id": "sub_del_123",
+                "customer": "cus_del_123",
+                "status": "canceled",
+            }
+        },
+    }
+    raw_payload = json.dumps(event_payload).encode("utf-8")
+
+    with patch("stripe.Webhook.construct_event", return_value=event_payload):
+        resp = client.post(
+            "/webhooks/stripe",
+            content=raw_payload,
+            headers={"Stripe-Signature": "valid_sig"},
+        )
+        assert resp.status_code == 200
+
+    # Subscription marked canceled
+    refreshed_sub = db_session.scalar(
+        select(Subscription).where(Subscription.id == sub.id)
+    )
+    assert refreshed_sub.status == "canceled"
+
+    # Tenant plan downgraded back to FREE
+    refreshed_tenant = db_session.scalar(
+        select(Tenant).where(Tenant.id == tenant.id)
+    )
+    assert refreshed_tenant.plan_id == free_plan_id
+
+
 def test_probe_4_missing_signature_returns_400(client: TestClient):
     """PROBE 4 — Missing Stripe-Signature header returns 400 Bad Request."""
     response = client.post(

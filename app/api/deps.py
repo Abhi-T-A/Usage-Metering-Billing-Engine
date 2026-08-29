@@ -69,12 +69,14 @@ def get_webhook_service(
     webhook_event_repo: WebhookEventRepository = Depends(get_webhook_event_repository),
     tenant_repo: TenantRepository = Depends(get_tenant_repository),
     subscription_repo: SubscriptionRepository = Depends(get_subscription_repository),
+    plan_repo: PlanRepository = Depends(get_plan_repository),
 ) -> WebhookService:
     return WebhookService(
         db=db,
         webhook_event_repo=webhook_event_repo,
         tenant_repo=tenant_repo,
         subscription_repo=subscription_repo,
+        plan_repo=plan_repo,
     )
 
 

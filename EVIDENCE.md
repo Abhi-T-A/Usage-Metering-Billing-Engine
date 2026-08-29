@@ -109,11 +109,14 @@ tests/test_usage_rollup.py::test_get_usage_aggregates_categories_and_calculates_
 ### 4. Stripe Integration & Webhooks
 - [x] **Subscription checkout works end-to-end in Stripe test mode.**
 - [x] **Webhooks verify signatures, ignore duplicate events, and update tenant plan/status.**
+- [x] **Handles checkout.session.completed, customer.subscription.updated, and customer.subscription.deleted.**
 
 #### Test Output Evidence:
 ```text
 tests/test_billing_checkout.py::test_checkout_success_and_plan_not_prematurely_updated PASSED
 tests/test_stripe_webhook.py::test_probe_3_checkout_session_completed_upgrades_tenant PASSED
+tests/test_stripe_webhook.py::test_webhook_customer_subscription_updated PASSED
+tests/test_stripe_webhook.py::test_webhook_customer_subscription_deleted_downgrades_tenant PASSED
 tests/test_stripe_webhook.py::test_probe_4_missing_signature_returns_400 PASSED
 tests/test_stripe_webhook.py::test_probe_4_forged_signature_returns_400 PASSED
 tests/test_stripe_webhook.py::test_probe_4_duplicate_webhook_processed_only_once PASSED
@@ -149,7 +152,7 @@ billing_db=# \dt
 ---
 
 ### 6. Background Job
-- [x] **$\ge 1$ background job with failure isolation and retry/recovery logic.**
+- [x] **$\ge 1$ background job with exponential backoff retries and failure alert hook.**
 
 #### Test Output Evidence:
 ```text
@@ -161,52 +164,54 @@ tests/test_reconciliation.py::test_reconciliation_error_isolation PASSED
 
 ---
 
-## 🏆 Complete Test Suite Run (37/37 Passed)
+## 🏆 Complete Test Suite Run (39/39 Passed)
 
 ```text
 ============================= test session starts =============================
 platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0
 rootdir: D:\Usage-Metering-Billing-Engine
 plugins: anyio-4.14.2
-collected 37 items
+collected 39 items
 
 tests/test_auth.py::test_protected_route_with_valid_api_key PASSED       [  2%]
 tests/test_auth.py::test_protected_route_with_missing_api_key PASSED     [  5%]
-tests/test_auth.py::test_protected_route_with_invalid_api_key PASSED     [  8%]
+tests/test_auth.py::test_protected_route_with_invalid_api_key PASSED     [  7%]
 tests/test_billing_checkout.py::test_checkout_unauthenticated_rejected PASSED [ 10%]
-tests/test_billing_checkout.py::test_checkout_nonexistent_plan_returns_404 PASSED [ 13%]
-tests/test_billing_checkout.py::test_checkout_current_plan_returns_400 PASSED [ 16%]
-tests/test_billing_checkout.py::test_checkout_success_and_plan_not_prematurely_updated PASSED [ 18%]
-tests/test_database.py::test_database_connection PASSED                  [ 21%]
-tests/test_health.py::test_health_check PASSED                           [ 24%]
-tests/test_metering.py::test_probe_1_idempotent_usage_recording PASSED   [ 27%]
-tests/test_metering.py::test_idempotency_different_keys_creates_distinct_events PASSED [ 29%]
-tests/test_metering.py::test_generate_missing_idempotency_key_returns_400 PASSED [ 32%]
-tests/test_metering.py::test_generate_missing_or_invalid_auth_returns_401 PASSED [ 35%]
-tests/test_pricing.py::test_pricing_normal_input_tokens PASSED           [ 37%]
-tests/test_pricing.py::test_pricing_cached_input_discount PASSED         [ 40%]
-tests/test_pricing.py::test_pricing_output_tokens PASSED                 [ 43%]
-tests/test_pricing.py::test_pricing_reasoning_tokens_priced_as_output PASSED [ 45%]
+tests/test_billing_checkout.py::test_checkout_nonexistent_plan_returns_404 PASSED [ 12%]
+tests/test_billing_checkout.py::test_checkout_current_plan_returns_400 PASSED [ 15%]
+tests/test_billing_checkout.py::test_checkout_success_and_plan_not_prematurely_updated PASSED [ 17%]
+tests/test_database.py::test_database_connection PASSED                  [ 20%]
+tests/test_health.py::test_health_check PASSED                           [ 23%]
+tests/test_metering.py::test_probe_1_idempotent_usage_recording PASSED   [ 25%]
+tests/test_metering.py::test_idempotency_different_keys_creates_distinct_events PASSED [ 28%]
+tests/test_metering.py::test_generate_missing_idempotency_key_returns_400 PASSED [ 30%]
+tests/test_metering.py::test_generate_missing_or_invalid_auth_returns_401 PASSED [ 33%]
+tests/test_pricing.py::test_pricing_normal_input_tokens PASSED           [ 35%]
+tests/test_pricing.py::test_pricing_cached_input_discount PASSED         [ 38%]
+tests/test_pricing.py::test_pricing_output_tokens PASSED                 [ 41%]
+tests/test_pricing.py::test_pricing_reasoning_tokens_priced_as_output PASSED [ 43%]
 tests/test_pricing.py::test_pricing_combined_calculation PASSED          [ 48%]
-tests/test_pricing.py::test_pricing_zero_usage_returns_zero_cost PASSED  [ 51%]
-tests/test_pricing.py::test_pricing_types_are_strictly_integers PASSED   [ 54%]
-tests/test_quota.py::test_probe_2_quota_boundary_exact_limit_and_exceeded PASSED [ 56%]
-tests/test_quota.py::test_quota_idempotent_retry_at_quota_limit_succeeds PASSED [ 59%]
-tests/test_quota.py::test_single_request_exceeding_total_limit_rejected PASSED [ 62%]
-tests/test_reconciliation.py::test_reconciliation_in_sync_makes_no_changes PASSED [ 64%]
-tests/test_reconciliation.py::test_reconciliation_status_mismatch_correction PASSED [ 67%]
-tests/test_reconciliation.py::test_reconciliation_missing_stripe_subscription PASSED [ 70%]
-tests/test_reconciliation.py::test_reconciliation_error_isolation PASSED [ 72%]
-tests/test_security.py::test_api_key_hashing PASSED                      [ 75%]
-tests/test_stripe_webhook.py::test_probe_3_checkout_session_completed_upgrades_tenant PASSED [ 78%]
-tests/test_stripe_webhook.py::test_probe_4_missing_signature_returns_400 PASSED [ 81%]
-tests/test_stripe_webhook.py::test_probe_4_forged_signature_returns_400 PASSED [ 83%]
-tests/test_stripe_webhook.py::test_probe_4_duplicate_webhook_processed_only_once PASSED [ 86%]
+tests/test_pricing.py::test_pricing_zero_usage_returns_zero_cost PASSED  [ 48%]
+tests/test_pricing.py::test_pricing_types_are_strictly_integers PASSED   [ 51%]
+tests/test_quota.py::test_probe_2_quota_boundary_exact_limit_and_exceeded PASSED [ 53%]
+tests/test_quota.py::test_quota_idempotent_retry_at_quota_limit_succeeds PASSED [ 56%]
+tests/test_quota.py::test_single_request_exceeding_total_limit_rejected PASSED [ 58%]
+tests/test_reconciliation.py::test_reconciliation_in_sync_makes_no_changes PASSED [ 61%]
+tests/test_reconciliation.py::test_reconciliation_status_mismatch_correction PASSED [ 64%]
+tests/test_reconciliation.py::test_reconciliation_missing_stripe_subscription PASSED [ 66%]
+tests/test_reconciliation.py::test_reconciliation_error_isolation PASSED [ 69%]
+tests/test_security.py::test_api_key_hashing PASSED                      [ 71%]
+tests/test_stripe_webhook.py::test_probe_3_checkout_session_completed_upgrades_tenant PASSED [ 74%]
+tests/test_stripe_webhook.py::test_webhook_customer_subscription_updated PASSED [ 76%]
+tests/test_stripe_webhook.py::test_webhook_customer_subscription_deleted_downgrades_tenant PASSED [ 79%]
+tests/test_stripe_webhook.py::test_probe_4_missing_signature_returns_400 PASSED [ 82%]
+tests/test_stripe_webhook.py::test_probe_4_forged_signature_returns_400 PASSED [ 84%]
+tests/test_stripe_webhook.py::test_probe_4_duplicate_webhook_processed_only_once PASSED [ 87%]
 tests/test_usage_rollup.py::test_get_usage_unauthenticated_returns_401 PASSED [ 89%]
-tests/test_usage_rollup.py::test_get_usage_empty_returns_zeroes_with_plan_limits PASSED [ 91%]
+tests/test_usage_rollup.py::test_get_usage_empty_returns_zeroes_with_plan_limits PASSED [ 92%]
 tests/test_usage_rollup.py::test_get_usage_aggregates_categories_and_calculates_cost PASSED [ 94%]
 tests/test_usage_rollup.py::test_get_usage_tenant_isolation PASSED       [ 97%]
 tests/test_usage_rollup.py::test_get_usage_remaining_at_exact_limit PASSED [100%]
 
-====================== 37 passed in 3.22s =======================
+====================== 39 passed in 3.47s =======================
 ```
